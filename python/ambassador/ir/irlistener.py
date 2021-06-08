@@ -130,8 +130,14 @@ class IRListener (IRResource):
 
         securityModel = self.get("securityModel") or "????"
 
-        return "<Listener %s on %s:%d (%s -- %s)>" % \
-               (self.name, self.bind_address, self.port, securityModel, pstack)
+        hoststr = ""
+
+        if self.hostSelector:
+            selstr = "; ".join([ f"{k}={v}" for k, v in self.hostSelector.items() ])
+            hoststr = f", hostsel: {selstr}"
+
+        return "<Listener %s on %s:%d (%s -- %s)%s>" % \
+               (self.name, self.bind_address, self.port, securityModel, pstack, hoststr)
 
     # Deliberately matches IRTCPMappingGroup.bind_to()
     def bind_to(self) -> str:

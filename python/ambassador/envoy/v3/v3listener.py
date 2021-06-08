@@ -142,6 +142,7 @@ class V3Listener(dict):
         self._base_http_config: Optional[Dict[str, Any]] = None
         self._chains: Dict[str, V3Chain] = {}
         self._tls_ok: bool = False
+        self._selector: Optional[str] = irlistener.get('hostSelector') or None
 
         # It's important from a performance perspective to wrap debug log statements
         # with this check so we don't end up generating log strings (or even JSON
@@ -612,9 +613,34 @@ class V3Listener(dict):
             if self._log_debug:
                 self.config.ir.logger.debug("V3Listener %s: consider %s", self.name, host)
 
-            # XXX Reject if labels don't match.
+            # First up: don't take this host if we have a selector that it doesn't match.
+    
+            if self._selector:
+                selectors: Dict[str, str] = self._selector.get("matchLabels") or {}
 
-            # OK, if we're still here, then it's a question of matching the Listener's 
+                if selectors:
+                    # If the host has no metadata labels, we can short-circuit (and, not
+                    # coincidentally, we can skip a weirder conditional down in the loop).
+                    if not host.metadata_labels:
+                        self.config.ir.logger.info("V3Listener %s: drop %s on selector, but no host labels", self.name, host)
+                        continue
+
+                    selmatch = False
+
+                    for k, v in selectors.items():
+                        if host.metadata_labels.get(k) == v:
+                            self.config.ir.logger.info("V3Listener %s: match %s with selector (%s=%s)", self.name, host, k, v)
+                            selmatch = True
+                            break
+                        else:
+                            self.config.ir.logger.info("V3Listener %s: match %s misses on selector %s", self.name, host, k)
+                            selmatch = True
+    
+                    if not selmatch:
+                        self.config.ir.logger.info("V3Listener %s: drop %s on selector mismatch", self.name, host)
+                        continue
+
+            # OK, if we're still here, then it's a question of matching the Listener's
             # SecurityModel with the Host's requestPolicy. It happens that it's actually
             # pretty hard to reject things at this level. 
             #
