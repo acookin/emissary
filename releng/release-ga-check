@@ -20,7 +20,7 @@ if __name__ == '__main__':
     ga_ver = args.ga_version
 
 
-    if not re_ga.match(ga_version) and not re_ga.match(ga_ver):
+    if not re_ga.match(ga_ver) and not re_ea.match(ga_ver):
         sys.stderr.write(f"{ga_ver} does not match X.Y.Z(-ea)?")
         sys.exit(2)
 
