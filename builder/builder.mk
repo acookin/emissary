@@ -345,7 +345,7 @@ push: docker/kat-server.docker.push.remote
 .PHONY: push
 
 push-dev: docker/$(LCNAME).docker.tag.local docker/$(LCNAME)-ea.docker.tag.local
-	set -e; { \
+	@set -e; { \
 		if [ -n "$(IS_DIRTY)" ]; then \
 			echo "push-dev: tree must be clean" >&2 ;\
 			exit 1 ;\
