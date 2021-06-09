@@ -43,6 +43,7 @@ def main(rc_tag: str, release_registry: str, image_name: str, helm_s3_key: str) 
     for line in fileinput.FileInput("charts/emissary-ingress/Chart.yaml"):
         if line.startswith("version:"):
             chart_version = line.replace("version:", "").strip()
+            chart_version = chart_version.split('-')[0]
             chart_version = f"{chart_version}-rc.{m[vN]}"
     print(f"    {ansiterm.sgr.bold.fg_cyn}==> Starting wait for helm chart {chart_version}.{ansiterm.sgr}")
     s3_url = f"datawire-static-files-dev.s3.amazonaws.com"
