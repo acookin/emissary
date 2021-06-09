@@ -11,8 +11,9 @@ if [[ -z "${rc_tag}" ]] ; then
 fi
 
 commit=$(git rev-parse HEAD)
+
 ${CURR_DIR}/release-wait-for-commit --commit $commit --s3-key dev-builds
-curl --fail --silent https://$AWS_S3_BUCKET.s3.amazonaws.com/dev-builds/$commit > /dev/null || \
-    (printf "ERROR: $commit not found in dev builds.\nPlease check that this commit passed oss-dev-images in circle or run \"make images push-dev\"\n" ; exit 1)
+
 git tag -m v$rc_tag -a v$rc_tag && git push origin v$rc_tag
+
 ${CURR_DIR}/release-wait-for-rc-artifacts --rc-tag $rc_tag --release-registry ${RELEASE_REGISTRY}
