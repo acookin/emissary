@@ -852,29 +852,14 @@ release/promote-oss/to-ga:
 
 VERSIONS_YAML_VER := $(shell grep 'version:' $(OSS_HOME)/docs/yaml/versions.yml | awk '{ print $$2 }')
 VERSIONS_YAML_VER_STRIPPED := $(subst -ea,,$(VERSIONS_YAML_VER))
+RC_NUMBER ?= 0
 
 release/prep-rc:
 	@test -n "$(VERSIONS_YAML_VER)" || (printf "version not found in versions.yml\n"; exit 1)
 	@test -n "$(RELEASE_REGISTRY)" || (printf "RELEASE_REGISTRY must be set\n"; exit 1)
 	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-ea)?$$ ]] || (printf '$(RED)ERROR: Version in versions.yml %s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
-	@set -e; { \
-		if [ -n "$(IS_DIRTY)" ]; then \
-			echo "release/prep-rc: tree must be clean" >&2 ;\
-			exit 1 ;\
-		fi; \
-		commit=$$(git rev-parse HEAD) ;\
-		$(OSS_HOME)/releng/release-wait-for-commit --commit $$commit --s3-key dev-builds ; \
-		curl --fail --silent https://$(AWS_S3_BUCKET).s3.amazonaws.com/dev-builds/$$commit > /dev/null || \
-			(printf "$(RED)ERROR: $$commit not found in dev builds.\nPlease check that this commit passed oss-dev-images in circle or run \"make images push-dev\"\n" ; exit 1); \
-		rc_tag=$(VERSIONS_YAML_VER_STRIPPED)-rc. ; \
-		if [[ -n "$${RC_NUMBER}" ]] ; then \
-			rc_tag="$${rc_tag}$(RC_NUMBER)" ;\
-		else \
-			rc_tag="$${rc_tag}0" ;\
-		fi ;\
-		git tag -m v$$rc_tag -a v$$rc_tag && git push origin v$$rc_tag ; \
-		$(OSS_HOME)/releng/release-wait-for-rc-artifacts --rc-tag $$rc_tag --release-registry $(RELEASE_REGISTRY) ; \
-	}
+	@[[ -n "$(IS_DIRTY)" ]] && (printf '$(RED)ERROR: tree must be clean\n'; exit 1)
+	@$(OSS_HOME)/releng/01-release-prep-rc $(VERSIONS_YAML_VER_STRIPPED)-rc.$(RC_NUMBER)
 .PHONY: release/prep-rc
 
 release/go:
