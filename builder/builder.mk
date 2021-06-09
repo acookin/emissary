@@ -832,7 +832,7 @@ release/promote-oss/dev-to-passed-ci:
 # This is normally run from CI by creating the GA tag.
 release/promote-oss/to-ga:
 	@test -n "$(RELEASE_REGISTRY)" || (printf "$${RELEASE_REGISTRY_ERR}\n"; exit 1)
-	@[[ "$(RELEASE_VERSION)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(RELEASE_VERSION)"; exit 1)
+	@[[ "$(RELEASE_VERSION)" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-ea)?$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(RELEASE_VERSION)"; exit 1)
 	@set -e; { \
       commit=$$(git rev-parse HEAD) ;\
 	  $(OSS_HOME)/releng/release-wait-for-commit --commit $$commit --s3-key passed-builds ; \
@@ -845,18 +845,18 @@ release/promote-oss/to-ga:
 	  $(MAKE) release/promote-oss/.main \
 	    PROMOTE_FROM_VERSION="$$dev_version" \
 		PROMOTE_FROM_REPO=$(DEV_REGISTRY) \
-	    PROMOTE_TO_VERSION="$(RELEASE_VERSION)-wip" \
-	    PROMOTE_CHANNEL=wip \
+	    PROMOTE_TO_VERSION="$(RELEASE_VERSION)" \
 	    ; \
 	}
 .PHONY: release/promote-oss/to-ga
 
 VERSIONS_YAML_VER := $(shell grep 'version:' $(OSS_HOME)/docs/yaml/versions.yml | awk '{ print $$2 }')
+VERSIONS_YAML_VER_STRIPPED := $(subst -ea,,$(VERSIONS_YAML_VER))
 
 release/prep-rc:
 	@test -n "$(VERSIONS_YAML_VER)" || (printf "version not found in versions.yml\n"; exit 1)
 	@test -n "$(RELEASE_REGISTRY)" || (printf "RELEASE_REGISTRY must be set\n"; exit 1)
-	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$$ ]] || (printf '$(RED)ERROR: Version in versions.yml %s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
+	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-ea)?$$ ]] || (printf '$(RED)ERROR: Version in versions.yml %s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
 	@set -e; { \
 		if [ -n "$(IS_DIRTY)" ]; then \
 			echo "release/prep-rc: tree must be clean" >&2 ;\
@@ -866,7 +866,7 @@ release/prep-rc:
 		$(OSS_HOME)/releng/release-wait-for-commit --commit $$commit --s3-key dev-builds ; \
 		curl --fail --silent https://$(S3_BUCKET).s3.amazonaws.com/dev-builds/$$commit > /dev/null || \
 			(printf "$(RED)ERROR: $$commit not found in dev builds.\nPlease check that this commit passed oss-dev-images in circle or run \"make images push-dev\"\n" ; exit 1); \
-		rc_tag=$(VERSIONS_YAML_VER)-rc. ; \
+		rc_tag=$(VERSIONS_YAML_VER_STRIPPED)-rc. ; \
 		if [[ -n "$${RC_NUMBER}" ]] ; then \
 			rc_tag="$${rc_tag}$(RC_NUMBER)" ;\
 		else \
@@ -889,8 +889,8 @@ release/go:
 	}
 	@test -n "$(VERSIONS_YAML_VER)" || (printf "version not found in versions.yml\n"; exit 1)
 	@test -n "$${RC_NUMBER}" || (printf "RC_NUMBER must be set.\n"; exit 1)
-	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
-	@git fetch && git checkout v$(VERSIONS_YAML_VER)-rc.$(RC_NUMBER)
+	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-ea)?$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
+	@git fetch && git checkout v$(VERSIONS_YAML_VER_STRIPPED)-rc.$(RC_NUMBER)
 	@$(OSS_HOME)/releng/release-ga-sanity-check --quiet $(VERSIONS_YAML_VER)
 	@git tag -m "Tagging v$(VERSIONS_YAML_VER) for GA" -a v$(VERSIONS_YAML_VER)
 	@git push origin v$(VERSIONS_YAML_VER)
@@ -905,8 +905,8 @@ release/go:
 
 release/manifests:
 	@test -n "$(VERSIONS_YAML_VER)" || (printf "version not found in versions.yml\n"; exit 1)
-	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
-	@$(OSS_HOME)/releng/release-manifest-image-update --oss-version $(VERSIONS_YAML_VER) --promote-path wip
+	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-ea)?$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
+	@$(OSS_HOME)/releng/release-manifest-image-update --oss-version $(VERSIONS_YAML_VER)
 .PHONY: release/manifests
 
 release/repatriate:
@@ -914,12 +914,10 @@ release/repatriate:
 .PHONY: release/repatriate
 
 release/ga-mirror:
-	# TODO: wip and dev bits are so we don't stomp on ourselves.
-	# This should get removed when this is ready to go
 	@test -n "$(VERSIONS_YAML_VER)" || (printf "$(RED)ERROR: version not found in versions.yml\n"; exit 1)
-	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
+	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-ea)?$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
 	@test -n "$(RELEASE_REGISTRY)" || (printf "$(RED)ERROR: RELEASE_REGISTRY not set\n"; exit 1)
-	@$(OSS_HOME)/releng/release-mirror-images $(VERSIONS_YAML_VER) $(RELEASE_REGISTRY) dev wip
+	@$(OSS_HOME)/releng/release-mirror-images --ga-version $(VERSIONS_YAML_VER) --source-registry $(RELEASE_REGISTRY) --image-append dev
 
 release/create-gh-release:
 	@test -n "$(VERSIONS_YAML_VER)" || (printf "$(RED)ERROR: version not found in versions.yml\n"; exit 1)
@@ -927,9 +925,7 @@ release/create-gh-release:
 	@$(OSS_HOME)/releng/release-create-github $(VERSIONS_YAML_VER)
 
 release/ga-check:
-	# TODO: wip bit is just so we don't stomp on ourselves
-	# this should go away
-	@$(OSS_HOME)/releng/release-ga-check $(VERSIONS_YAML_VER) wip $(RELEASE_REGISTRY) dev
+	@$(OSS_HOME)/releng/release-ga-check --ga-version $(VERSIONS_YAML_VER) --source-registry $(RELEASE_REGISTRY)
 
 release/start:
 	@test -n "$(VERSION)" || (printf "VERSION is required\n"; exit 1)
