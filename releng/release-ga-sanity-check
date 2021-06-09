@@ -59,9 +59,9 @@ def main(next_ver: str, quiet: bool = False) -> int:
 
     # ...make sure the passed-in version is OK...
     m = re_ga.match(next_ver)
-    assert m
     if not m:
         m = re_ea.match(next_ver)
+    assert m
 
     if checker.ok:
         if not quiet:
