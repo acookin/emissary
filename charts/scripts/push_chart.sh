@@ -31,10 +31,9 @@ thisversion=$(get_chart_version ${chart_dir})
 repo_key=
 if [[ -n "${REPO_KEY}" ]] ; then
     repo_key="${REPO_KEY}"
-elif [[ $thisversion =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] ; then
+elif [[ $thisversion =~ ^[0-9]+\.[0-9]+\.[0-9]+(-ea)?$ ]] ; then
     repo_key=charts
 else
-    # repo_key=ambassador-dev
     repo_key=charts-dev
 fi
 if [ -z "$AWS_BUCKET" ] ; then
