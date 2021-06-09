@@ -345,7 +345,7 @@ push: docker/kat-server.docker.push.remote
 .PHONY: push
 
 push-dev: docker/$(LCNAME).docker.tag.local docker/$(LCNAME)-ea.docker.tag.local
-	set -e; { \
+	@set -e; { \
 		if [ -n "$(IS_DIRTY)" ]; then \
 			echo "push-dev: tree must be clean" >&2 ;\
 			exit 1 ;\
@@ -852,55 +852,23 @@ release/promote-oss/to-ga:
 
 VERSIONS_YAML_VER := $(shell grep 'version:' $(OSS_HOME)/docs/yaml/versions.yml | awk '{ print $$2 }')
 VERSIONS_YAML_VER_STRIPPED := $(subst -ea,,$(VERSIONS_YAML_VER))
+RC_NUMBER ?= 0
 
 release/prep-rc:
 	@test -n "$(VERSIONS_YAML_VER)" || (printf "version not found in versions.yml\n"; exit 1)
 	@test -n "$(RELEASE_REGISTRY)" || (printf "RELEASE_REGISTRY must be set\n"; exit 1)
 	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-ea)?$$ ]] || (printf '$(RED)ERROR: Version in versions.yml %s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
-	@set -e; { \
-		if [ -n "$(IS_DIRTY)" ]; then \
-			echo "release/prep-rc: tree must be clean" >&2 ;\
-			exit 1 ;\
-		fi; \
-		commit=$$(git rev-parse HEAD) ;\
-		$(OSS_HOME)/releng/release-wait-for-commit --commit $$commit --s3-key dev-builds ; \
-		curl --fail --silent https://$(AWS_S3_BUCKET).s3.amazonaws.com/dev-builds/$$commit > /dev/null || \
-			(printf "$(RED)ERROR: $$commit not found in dev builds.\nPlease check that this commit passed oss-dev-images in circle or run \"make images push-dev\"\n" ; exit 1); \
-		rc_tag=$(VERSIONS_YAML_VER_STRIPPED)-rc. ; \
-		if [[ -n "$${RC_NUMBER}" ]] ; then \
-			rc_tag="$${rc_tag}$(RC_NUMBER)" ;\
-		else \
-			rc_tag="$${rc_tag}0" ;\
-		fi ;\
-		git tag -m v$$rc_tag -a v$$rc_tag && git push origin v$$rc_tag ; \
-		$(OSS_HOME)/releng/release-wait-for-rc-artifacts --rc-tag $$rc_tag --release-registry $(RELEASE_REGISTRY) ; \
-	}
+	@[[ -z "$(IS_DIRTY)" ]] || (printf '$(RED)ERROR: tree must be clean\n'; exit 1)
+	@AWS_S3_BUCKET=$(AWS_S3_BUCKET) RELEASE_REGISTRY=$(RELEASE_REGISTRY) \
+		$(OSS_HOME)/releng/01-release-prep-rc $(VERSIONS_YAML_VER_STRIPPED)-rc.$(RC_NUMBER)
 .PHONY: release/prep-rc
 
 release/go:
-	@set -e; { \
-		if [ -n "$(IS_DIRTY)" ]; then \
-			echo "release/go: tree must be clean" >&2 ;\
-			exit 1 ;\
-		fi; \
-		commit=$$(git rev-parse HEAD) ;\
-		curl --fail --silent https://$(AWS_S3_BUCKET).s3.amazonaws.com/passed-builds/$$commit > /dev/null || \
-			(printf "$(RED)ERROR: $$commit not found in dev builds.\nPlease check that this commit passed OSS: Dev in circle or run \"make release/promote-oss/dev-to-passed-ci\"\n" ; exit 1); \
-	}
 	@test -n "$(VERSIONS_YAML_VER)" || (printf "version not found in versions.yml\n"; exit 1)
 	@test -n "$${RC_NUMBER}" || (printf "RC_NUMBER must be set.\n"; exit 1)
 	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-ea)?$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
-	@git fetch && git checkout v$(VERSIONS_YAML_VER_STRIPPED)-rc.$(RC_NUMBER)
-	@$(OSS_HOME)/releng/release-ga-sanity-check --quiet $(VERSIONS_YAML_VER)
-	@git tag -m "Tagging v$(VERSIONS_YAML_VER) for GA" -a v$(VERSIONS_YAML_VER)
-	@git push origin v$(VERSIONS_YAML_VER)
-	@$(OSS_HOME)/releng/release-go-changelog-update --quiet $(VERSIONS_YAML_VER)
-	@$(OSS_HOME)/releng/release-wait-for-ga-image --ga-tag $(RELEASE_VERSION) --release-registry $(RELEASE_REGISTRY)
-	@$(MAKE) release/ga-mirror
-	@git checkout v$(VERSIONS_YAML_VER)
-	@$(MAKE) release/manifests
-	@$(MAKE) release/chart/tag
-	@$(AES_HOME)/releng/release-wait-for-ga-artifacts --ga-tag $(VERSIONS_YAML_VER)
+	@[[ -z "$(IS_DIRTY)" ]] || (printf '$(RED)ERROR: tree must be clean\n'; exit 1)
+	@RELEASE_REGISTRY=$(RELEASE_REGISTRY) $(OSS_HOME)/releng/02-release-ga $(VERSIONS_YAML_VER)
 .PHONY: release/go
 
 release/manifests:
@@ -921,7 +889,7 @@ release/ga-mirror:
 
 release/create-gh-release:
 	@test -n "$(VERSIONS_YAML_VER)" || (printf "$(RED)ERROR: version not found in versions.yml\n"; exit 1)
-	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
+	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-ea)?$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
 	@$(OSS_HOME)/releng/release-create-github $(VERSIONS_YAML_VER)
 
 release/ga-check:
