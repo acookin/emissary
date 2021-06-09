@@ -1,7 +1,12 @@
 from .uiutil import run
 from .uiutil import run_txtcapture as run_capture
+from . import check_command
 import http.client
 import json
+
+
+def branch_exists(branch_name: str) -> bool:
+    return check_command(["git", "rev-parse", "--verify", branch_name])
 
 
 def has_open_pr(gh_repo: str, base: str, branchname: str) -> bool:
