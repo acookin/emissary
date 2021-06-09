@@ -879,28 +879,30 @@ release/prep-rc:
 
 release/go:
 	@set -e; { \
+		test -n "$(VERSIONS_YAML_VER)" || (printf "version not found in versions.yml\n"; exit 1) ; \
+		test -n "$${RC_NUMBER}" || (printf "RC_NUMBER must be set.\n"; exit 1) ; \
+		[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-ea)?$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1) ; \
 		if [ -n "$(IS_DIRTY)" ]; then \
 			echo "release/go: tree must be clean" >&2 ;\
 			exit 1 ;\
 		fi; \
+		ga_ver=$(VERSIONS_YAML_VER) ; \
 		commit=$$(git rev-parse HEAD) ;\
 		curl --fail --silent https://$(AWS_S3_BUCKET).s3.amazonaws.com/passed-builds/$$commit > /dev/null || \
 			(printf "$(RED)ERROR: $$commit not found in dev builds.\nPlease check that this commit passed OSS: Dev in circle or run \"make release/promote-oss/dev-to-passed-ci\"\n" ; exit 1); \
+		git fetch && git checkout v$(VERSIONS_YAML_VER_STRIPPED)-rc.$(RC_NUMBER) ; \
+		$(OSS_HOME)/releng/release-ga-sanity-check --quiet $(VERSIONS_YAML_VER) ; \
+		echo "Tagging $${ga_ver}" ; \
+		git tag -m "Tagging v$$ga_ver for GA" -a v$$ga_ver ; \
+		git push origin v$$ga_ver; \
+		$(OSS_HOME)/releng/release-go-changelog-update --quiet $$ga_ver ; \
+		$(OSS_HOME)/releng/release-wait-for-ga-image --ga-tag $$ga_ver --release-registry $(RELEASE_REGISTRY) ; \
+		$(MAKE) release/ga-mirror ; \
+		git checkout v$$ga_ver ; \
+		$(MAKE) release/manifests ; \
+		$(MAKE) release/chart/tag ; \
+		$(AES_HOME)/releng/release-wait-for-ga-artifacts --ga-tag $$ga_ver ; \
 	}
-	@test -n "$(VERSIONS_YAML_VER)" || (printf "version not found in versions.yml\n"; exit 1)
-	@test -n "$${RC_NUMBER}" || (printf "RC_NUMBER must be set.\n"; exit 1)
-	@[[ "$(VERSIONS_YAML_VER)" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-ea)?$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like a GA tag\n' "$(VERSIONS_YAML_VER)"; exit 1)
-	@git fetch && git checkout v$(VERSIONS_YAML_VER_STRIPPED)-rc.$(RC_NUMBER)
-	@$(OSS_HOME)/releng/release-ga-sanity-check --quiet $(VERSIONS_YAML_VER)
-	@git tag -m "Tagging v$(VERSIONS_YAML_VER) for GA" -a v$(VERSIONS_YAML_VER)
-	@git push origin v$(VERSIONS_YAML_VER)
-	@$(OSS_HOME)/releng/release-go-changelog-update --quiet $(VERSIONS_YAML_VER)
-	@$(OSS_HOME)/releng/release-wait-for-ga-image --ga-tag $(RELEASE_VERSION) --release-registry $(RELEASE_REGISTRY)
-	@$(MAKE) release/ga-mirror
-	@git checkout v$(VERSIONS_YAML_VER)
-	@$(MAKE) release/manifests
-	@$(MAKE) release/chart/tag
-	@$(AES_HOME)/releng/release-wait-for-ga-artifacts --ga-tag $(VERSIONS_YAML_VER)
 .PHONY: release/go
 
 release/manifests:
