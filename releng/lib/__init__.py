@@ -23,11 +23,6 @@ vN = 4
 DEFAULT_REPO = "acookin/emissary"
 
 
-def check_command(args) -> int:
-    p = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    return p.returncode == 0
-
-
 def base_version(release_version: str) -> str:
     """Given 'X.Y.Z[-rc.N]', return 'X.Y'."""
     return build_version(release_version).rsplit(sep='.', maxsplit=1)[0]

@@ -1,6 +1,5 @@
-from .uiutil import run
+from .uiutil import run, check_command
 from .uiutil import run_txtcapture as run_capture
-from . import check_command
 import http.client
 import json
 

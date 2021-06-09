@@ -12,8 +12,8 @@ from shutil import which
 import argparse
 import subprocess
 
-from lib import re_ga, re_ea, get_gh_repo, check_command
-from lib.uiutil import Checker, CheckResult, run
+from lib import re_ga, re_ea, get_gh_repo
+from lib.uiutil import Checker, CheckResult, run, check_command
 from lib.uiutil import run_txtcapture as run_capture
 from lib.start_release_updates import update_versions_yaml, update_changelog_date
 from lib.gitutil import branch_exists
@@ -162,11 +162,12 @@ def main(next_ver: str, commit: bool = True, hotfix: bool = False) -> int:
                     "--reviewer", "kflynn,rhs,esmet,acookin"])
 
     if checker.ok:
-        print(f'Update complete. Merge PR back to target branch ASAP')
-        if os.getenv("AMBASSADOR_RELENG_NO_GUI"):
-            run(["gh", "pr", "view", workbranch, "--repo", get_gh_repo()])
-        else:
-            run(["gh", "pr", "view", workbranch, "--repo", get_gh_repo(), "--web"])
+        if commit:
+            print(f'Update complete. Merge PR back to target branch ASAP')
+            if os.getenv("AMBASSADOR_RELENG_NO_GUI"):
+                run(["gh", "pr", "view", workbranch, "--repo", get_gh_repo()])
+            else:
+                run(["gh", "pr", "view", workbranch, "--repo", get_gh_repo(), "--web"])
         return 0
     else:
         return 1
