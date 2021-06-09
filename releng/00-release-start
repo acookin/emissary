@@ -12,7 +12,7 @@ from shutil import which
 import argparse
 import subprocess
 
-from lib import re_ga, re_ea, get_gh_repo
+from lib import re_ga, re_ea, get_gh_repo, vX, vY
 from lib.uiutil import Checker, CheckResult, run, check_command
 from lib.uiutil import run_txtcapture as run_capture
 from lib.start_release_updates import update_versions_yaml, update_changelog_date
