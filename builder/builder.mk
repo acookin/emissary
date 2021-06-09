@@ -114,7 +114,7 @@ BUILDER = BUILDER_NAME=$(BUILDER_NAME) $(abspath $(BUILDER_HOME)/builder.sh)
 DBUILD = $(abspath $(BUILDER_HOME)/dbuild.sh)
 COPY_GOLD = $(abspath $(BUILDER_HOME)/copy-gold.sh)
 
-AWS_S3_BUCKET = datwire-static-files-dev
+AWS_S3_BUCKET = datawire-static-files-dev
 
 # the image used for running the Ingress v1 tests with KIND.
 # the current, official image does not support Ingress v1, so we must build our own image with k8s 1.18.
@@ -345,7 +345,7 @@ push: docker/kat-server.docker.push.remote
 .PHONY: push
 
 push-dev: docker/$(LCNAME).docker.tag.local docker/$(LCNAME)-ea.docker.tag.local
-	@set -e; { \
+	set -e; { \
 		if [ -n "$(IS_DIRTY)" ]; then \
 			echo "push-dev: tree must be clean" >&2 ;\
 			exit 1 ;\

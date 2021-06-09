@@ -26,7 +26,7 @@ if ! command -v helm 2> /dev/null ; then
     ./get_helm.sh --version v3.4.1
     rm -f get_helm.sh
 fi
-thisversion=$(get_chart_version ${TOP_DIR})
+thisversion=$(get_chart_version ${chart_dir})
 
 repo_key=
 if [[ -n "${REPO_KEY}" ]] ; then
