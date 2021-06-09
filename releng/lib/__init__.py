@@ -17,7 +17,7 @@ vX = 1
 vY = 2
 vN = 4
 
-DEFAULT_REPO = "emissary-ingress/emissary"
+DEFAULT_REPO = "acookin/emissary"
 
 
 def base_version(release_version: str) -> str:

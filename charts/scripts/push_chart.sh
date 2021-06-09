@@ -37,7 +37,11 @@ else
     # repo_key=ambassador-dev
     repo_key=charts-dev
 fi
-repo_url=https://s3.amazonaws.com/datawire-static-files/${repo_key}/
+if [ -z "$AWS_BUCKET" ] ; then
+    AWS_BUCKET=datawire-static-files-dev
+fi
+
+repo_url=https://s3.amazonaws.com/${AWS_BUCKET}/${repo_key}/
 
 rm -f ${chart_dir}/*.tgz
 info "Pushing Helm Chart"
@@ -53,9 +57,6 @@ if [[ $thisversion =~ ^[0-9]+\.[0-9]+\.[0-9]+$  ]] && [[ $(grep -c "${chart_name
 	exit 1
 fi
 
-if [ -z "$AWS_BUCKET" ] ; then
-    AWS_BUCKET=datawire-static-files
-fi
 
 [ -n "$AWS_ACCESS_KEY_ID"     ] || abort "AWS_ACCESS_KEY_ID is not set"
 [ -n "$AWS_SECRET_ACCESS_KEY" ] || abort "AWS_SECRET_ACCESS_KEY is not set"
@@ -91,7 +92,7 @@ if [[ $thisversion =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && [[ -n "${PUBLISH_GIT_RELEAS
     tag="chart-v${thisversion}"
     export CHART_VERSION=${thisversion}
     title=`envsubst < ${chart_dir}/RELEASE_TITLE.tpl`
-    repo_full_name="emissary-ingress/emissary"
+    repo_full_name="acookin/emissary"
     token="${GH_RELEASE_TOKEN}"
     description=`envsubst < ${chart_dir}/RELEASE.tpl | awk '{printf "%s\\\n", $0}'`
     in_changelog=false
