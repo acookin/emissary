@@ -12,16 +12,16 @@ from lib import re_ga, get_gh_repo
 from lib.uiutil import Checker, CheckResult, run
 
 
-RELEASE_TITLE_FORMAT = "Ambassador {release_version}"
+RELEASE_TITLE_FORMAT = "Emissary Ingress {release_version}"
 
 RELEASE_BODY_FORMAT= """
-## :tada: Ambassador {release_version} :tada:
+## :tada: Emissary Ingress {release_version} :tada:
 
-#### Ambassador is an open source, Kubernetes-native microservices API gateway built on the Envoy Proxy.
+#### Emissary Ingress is an open source, Kubernetes-native microservices API gateway built on the Envoy Proxy.
 
-Upgrade Ambassador - https://www.getambassador.io/reference/upgrading.html
+Upgrade Emissary - https://www.getambassador.io/reference/upgrading.html
 View changelog - https://github.com/emissary-ingress/emissary/blob/master/CHANGELOG.md
-Get started with Ambassador on Kubernetes - https://www.getambassador.io/user-guide/getting-started
+Get started with Emissary on Kubernetes - https://www.getambassador.io/user-guide/getting-started
 
 {release_notes}
 """

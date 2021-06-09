@@ -7,12 +7,12 @@ endef
 
 define _set_tag_and_repo
 	$(OSS_HOME)/venv/bin/python $(OSS_HOME)/charts/scripts/update_chart_image_values.py \
-		--values-file $(1) --tag $(2) --repo $(3) --type $(4)
+		--values-file $(1) --tag $(2) --repo $(3)
 endef
 
 define _set_tag
 	$(OSS_HOME)/venv/bin/python $(OSS_HOME)/charts/scripts/update_chart_image_values.py \
-		--values-file $(1) --tag $(2) --type $(3)
+		--values-file $(1) --tag $(2)
 endef
 
 define _docgen

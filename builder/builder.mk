@@ -114,7 +114,7 @@ BUILDER = BUILDER_NAME=$(BUILDER_NAME) $(abspath $(BUILDER_HOME)/builder.sh)
 DBUILD = $(abspath $(BUILDER_HOME)/dbuild.sh)
 COPY_GOLD = $(abspath $(BUILDER_HOME)/copy-gold.sh)
 
-S3_BUCKET = datwire-static-files-dev
+AWS_S3_BUCKET = datwire-static-files-dev
 
 # the image used for running the Ingress v1 tests with KIND.
 # the current, official image does not support Ingress v1, so we must build our own image with k8s 1.18.
@@ -365,7 +365,7 @@ push-dev: docker/$(LCNAME).docker.tag.local docker/$(LCNAME)-ea.docker.tag.local
 		done ;\
 		commit=$$(git rev-parse HEAD) ;\
 		printf "$(CYN)==> $(GRN)recording $(BLU)$$commit$(GRN) => $(BLU)$$suffix$(GRN) in S3...$(END)\n" ;\
-		echo "$$suffix" | aws s3 cp - s3://$(S3_BUCKET)/dev-builds/$$commit ;\
+		echo "$$suffix" | aws s3 cp - s3://$(AWS_S3_BUCKET)/dev-builds/$$commit ;\
 		$(MAKE) \
 			CHART_VERSION_SUFFIX=-$$chartsuffix \
 			IMAGE_TAG=$${suffix} \
@@ -750,8 +750,8 @@ release/promote-oss/.main:
 		docker push $(RELEASE_REGISTRY)/$(REPO):$(PROMOTE_TO_VERSION) ;\
 	}
 
-	@printf '  $(CYN)https://s3.amazonaws.com/$(S3_BUCKET)/emissary-ingress/$(PROMOTE_CHANNEL)stable.txt$(END)\n'
-	printf '%s' "$(RELEASE_VERSION)" | aws s3 cp - s3://$(S3_BUCKET)/emissary-ingress/$(PROMOTE_CHANNEL)stable.txt
+	@printf '  $(CYN)https://s3.amazonaws.com/$(AWS_S3_BUCKET)/emissary-ingress/$(PROMOTE_CHANNEL)stable.txt$(END)\n'
+	printf '%s' "$(RELEASE_VERSION)" | aws s3 cp - s3://$(AWS_S3_BUCKET)/emissary-ingress/$(PROMOTE_CHANNEL)stable.txt
 
 	@printf '  $(CYN)s3://scout-datawire-io/emissary-ingress/$(PROMOTE_CHANNEL)app.json$(END)\n'
 	printf '{"application":"emissary","latest_version":"%s","notices":[]}' "$(RELEASE_VERSION)" | aws s3 cp - s3://scout-datawire-io/emissary-ingress/$(PROMOTE_CHANNEL)app.json
@@ -778,7 +778,7 @@ release/promote-oss/dev-to-rc:
 			exit 1 ;\
 		fi; \
 		commit=$$(git rev-parse HEAD) ;\
-		dev_version=$$(aws s3 cp s3://$(S3_BUCKET)/dev-builds/$$commit -) ;\
+		dev_version=$$(aws s3 cp s3://$(AWS_S3_BUCKET)/dev-builds/$$commit -) ;\
 		if [ -z "$$dev_version" ]; then \
 			printf "$(RED)==> found no dev version for $$commit in S3...$(END)\n" ;\
 			exit 1 ;\
@@ -818,13 +818,13 @@ release/print-test-artifacts:
 release/promote-oss/dev-to-passed-ci:
 	@set -e; { \
 		commit=$$(git rev-parse HEAD) ;\
-		dev_version=$$(aws s3 cp s3://$(S3_BUCKET)/dev-builds/$$commit -) ;\
+		dev_version=$$(aws s3 cp s3://$(AWS_S3_BUCKET)/dev-builds/$$commit -) ;\
 		if [ -z "$$dev_version" ]; then \
 			printf "$(RED)==> found no dev version for $$commit in S3...$(END)\n" ;\
 			exit 1 ;\
 		fi ;\
 		printf "$(CYN)==> $(GRN)Promoting $(BLU)$$commit$(GRN) => $(BLU)$$dev_version$(GRN) in S3...$(END)\n" ;\
-		echo "$$dev_version" | aws s3 cp - s3://$(S3_BUCKET)/passed-builds/$$commit ;\
+		echo "$$dev_version" | aws s3 cp - s3://$(AWS_S3_BUCKET)/passed-builds/$$commit ;\
 	}
 .PHONY: release/promote-oss/dev-to-passed-ci
 
@@ -836,7 +836,7 @@ release/promote-oss/to-ga:
 	@set -e; { \
       commit=$$(git rev-parse HEAD) ;\
 	  $(OSS_HOME)/releng/release-wait-for-commit --commit $$commit --s3-key passed-builds ; \
-	  dev_version=$$(aws s3 cp s3://$(S3_BUCKET)/passed-builds/$$commit -) ;\
+	  dev_version=$$(aws s3 cp s3://$(AWS_S3_BUCKET)/passed-builds/$$commit -) ;\
 	  if [ -z "$$dev_version" ]; then \
 		  printf "$(RED)==> found no passed dev version for $$commit in S3...$(END)\n" ;\
 		  exit 1 ;\
@@ -864,7 +864,7 @@ release/prep-rc:
 		fi; \
 		commit=$$(git rev-parse HEAD) ;\
 		$(OSS_HOME)/releng/release-wait-for-commit --commit $$commit --s3-key dev-builds ; \
-		curl --fail --silent https://$(S3_BUCKET).s3.amazonaws.com/dev-builds/$$commit > /dev/null || \
+		curl --fail --silent https://$(AWS_S3_BUCKET).s3.amazonaws.com/dev-builds/$$commit > /dev/null || \
 			(printf "$(RED)ERROR: $$commit not found in dev builds.\nPlease check that this commit passed oss-dev-images in circle or run \"make images push-dev\"\n" ; exit 1); \
 		rc_tag=$(VERSIONS_YAML_VER_STRIPPED)-rc. ; \
 		if [[ -n "$${RC_NUMBER}" ]] ; then \
@@ -884,7 +884,7 @@ release/go:
 			exit 1 ;\
 		fi; \
 		commit=$$(git rev-parse HEAD) ;\
-		curl --fail --silent https://$(S3_BUCKET).s3.amazonaws.com/passed-builds/$$commit > /dev/null || \
+		curl --fail --silent https://$(AWS_S3_BUCKET).s3.amazonaws.com/passed-builds/$$commit > /dev/null || \
 			(printf "$(RED)ERROR: $$commit not found in dev builds.\nPlease check that this commit passed OSS: Dev in circle or run \"make release/promote-oss/dev-to-passed-ci\"\n" ; exit 1); \
 	}
 	@test -n "$(VERSIONS_YAML_VER)" || (printf "version not found in versions.yml\n"; exit 1)
