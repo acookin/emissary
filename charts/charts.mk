@@ -70,7 +70,7 @@ release/chart/update-images: $(YQ)
 	@[ -n "${IMAGE_TAG}" ] || (echo "IMAGE_TAG must be set" && exit 1)
 	([[ "${IMAGE_TAG}" =~ .*\.0$$ ]] && $(MAKE) release/chart-bump/minor) || $(MAKE) release/chart-bump/revision
 	for chart in $(EMISSARY_CHART) ; do \
-		([[ "${IMAGE_TAG}" =~ .*\-ea$$ ]] && sed -i.bak -E "s/version: ([0-9]+\.[0-9]+\.[0-9]+).*/version: \1-ea/g" $$chart/Chart.yaml && rm $$chart/Chart.yaml.bak
+		[[ "${IMAGE_TAG}" =~ .*\-ea$$ ]] && sed -i.bak -E "s/version: ([0-9]+\.[0-9]+\.[0-9]+).*/version: \1-ea/g" $$chart/Chart.yaml && rm $$chart/Chart.yaml.bak ; \
 		$(call _set_tag,$$chart/values.yaml,${IMAGE_TAG}) ; \
 		$(YQ) w -i $$chart/Chart.yaml 'appVersion' ${IMAGE_TAG} ; \
 		IMAGE_TAG="${IMAGE_TAG}" CHART_NAME=`basename $$chart` $(OSS_HOME)/charts/scripts/image_tag_changelog_update.sh ; \
