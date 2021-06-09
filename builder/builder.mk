@@ -771,9 +771,8 @@ release/promote-oss/to-ea-latest:
 
 release/promote-oss/dev-to-rc:
 	@test -n "$(RELEASE_REGISTRY)" || (printf "$${RELEASE_REGISTRY_ERR}\n"; exit 1)
+	@[[ "$(RELEASE_VERSION)" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like an RC tag\n' "$(RELEASE_VERSION)"; exit 1)
 	@set -e; { \
-		rc_tag=`git describe --match '*-rc.*'` ; \
-		[[ "$$rc_tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$$ ]] || (printf '$(RED)ERROR: RELEASE_VERSION=%s does not look like an RC tag\n' "$$rc_tag"; exit 1) ; \
 		if [ -n "$(IS_DIRTY)" ]; then \
 			echo "release/promote-oss/dev-to-rc: tree must be clean" >&2 ;\
 			exit 1 ;\
@@ -785,13 +784,13 @@ release/promote-oss/dev-to-rc:
 			exit 1 ;\
 		fi ;\
 		printf "$(CYN)==> $(GRN)found version $(BLU)$$dev_version$(GRN) for $(BLU)$$commit$(GRN) in S3...$(END)\n" ;\
-		veroverride=$$rc_tag; \
+		veroverride=$(RELEASE_VERSION); \
 		$(MAKE) release/promote-oss/.main \
 			PROMOTE_FROM_VERSION="$$dev_version" \
 			PROMOTE_FROM_REPO=$(DEV_REGISTRY) \
-			PROMOTE_TO_VERSION=$$rc_tag \
+			PROMOTE_TO_VERSION=$(RELEASE_VERSION) \
 			PROMOTE_CHANNEL=test ; \
-		chartsuffix=$$rc_tag ; \
+		chartsuffix=$(RELEASE_VERSION) ; \
 		chartsuffix=$${chartsuffix#*-} ; \
 		$(MAKE) \
 			CHART_VERSION_SUFFIX=-$$chartsuffix \
