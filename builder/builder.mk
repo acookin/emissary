@@ -934,13 +934,13 @@ release/ga-check:
 release/start:
 	@test -n "$(VERSION)" || (printf "VERSION is required\n"; exit 1)
 	@$(OSS_HOME)/releng/start-sanity-check --quiet $(VERSION)
-	@$(OSS_HOME)/releng/start-update-version --quiet $(VERSION)
+	@$(OSS_HOME)/releng/00-release-start --next-version $(VERSION)
 .PHONY: release/start
 
 release/hotfix/start:
 	@test -n "$(VERSION)" || (printf "VERSION is required\n"; exit 1)
 	@$(OSS_HOME)/releng/start-sanity-check --quiet $(VERSION)
-	@$(OSS_HOME)/releng/start-hotfix-update-version --quiet $(VERSION)
+	@$(OSS_HOME)/releng/00-release-start --next-version $(VERSION) --hotfix
 .PHONY: release/hotfix/start
 
 clean:
