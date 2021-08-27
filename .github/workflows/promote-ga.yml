@@ -2,10 +2,10 @@ name: promote-to-ga
 on:
   push:
     tags:
-      - v*.*.*
-    tags-ignore:
-      - v*.*.*-rc.*
-      - v*.*.*-hf.*
+      - v*.*.*.*
+      - '!v*.*.*-rc.*'
+      - '!v*.*.*-hf.*'
+      - '!chart-**'
 jobs:
   promote-to-ga:
     runs-on: ubuntu-latest
