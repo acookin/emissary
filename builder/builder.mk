@@ -762,6 +762,7 @@ release/promote-oss/dev-to-rc:
 			exit 1 ;\
 		fi; \
 		commit=$$(git rev-parse HEAD) ;\
+		$(OSS_HOME)/releng/release-wait-for-commit --commit $$commit --s3-key dev-builds ;\
 		dev_version=$$(aws s3 cp s3://$(AWS_S3_BUCKET)/dev-builds/$$commit -) ;\
 		if [ -z "$$dev_version" ]; then \
 			printf "$(RED)==> found no dev version for $$commit in S3...$(END)\n" ;\
