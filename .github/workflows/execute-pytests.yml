@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        fail-fast: false
         # NOTES:
         # legacy mode does not do fast reconfigure - never test state true, true
         # on master/release branch (legacy + reconfigure testing)
