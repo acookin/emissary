@@ -322,7 +322,6 @@ docker/kat-server.docker.stamp: %/kat-server.docker.stamp: %/base-envoy.docker.t
 REPO=$(BUILDER_NAME)
 
 images: docker/$(LCNAME).docker.tag.local
-images: docker/$(LCNAME)-ea.docker.tag.local
 images: docker/kat-client.docker.tag.local
 images: docker/kat-server.docker.tag.local
 .PHONY: images
@@ -357,6 +356,8 @@ push-dev: docker/$(LCNAME).docker.tag.local
 			docker push $$tag ;\
 		done ;\
 		commit=$$(git rev-parse HEAD) ;\
+		echo "ORIGIN:" ; \
+		git config --get remote.origin.url ; \
 		printf "$(CYN)==> $(GRN)recording $(BLU)$$commit$(GRN) => $(BLU)$$suffix$(GRN) in S3...$(END)\n" ;\
 		echo "$$suffix" | aws s3 cp - s3://$(AWS_S3_BUCKET)/dev-builds/$$commit ;\
 		if [ $(IS_PRIVATE) ] ; then \
