@@ -356,9 +356,6 @@ push-dev: docker/$(LCNAME).docker.tag.local
 			docker push $$tag ;\
 		done ;\
 		commit=$$(git rev-parse HEAD) ;\
-		echo "ORIGIN:" ; \
-		git config --get remote.origin.url ; \
-		echo ${GITHUB_SHA} ; \
 		printf "$(CYN)==> $(GRN)recording $(BLU)$$commit$(GRN) => $(BLU)$$suffix$(GRN) in S3...$(END)\n" ;\
 		echo "$$suffix" | aws s3 cp - s3://$(AWS_S3_BUCKET)/dev-builds/$$commit ;\
 		if [ $(IS_PRIVATE) ] ; then \
