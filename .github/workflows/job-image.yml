@@ -38,9 +38,6 @@ jobs:
         with:
           username: ${{ secrets.GH_DOCKER_BUILD_USERNAME }}
           password: ${{ secrets.GH_DOCKER_BUILD_TOKEN }}
-      - name: "make push"
-        run: |
-          make push
       - name: "make push-dev"
         run: |
           make push-dev
